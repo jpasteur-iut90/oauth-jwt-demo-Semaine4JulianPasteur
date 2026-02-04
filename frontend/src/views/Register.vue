@@ -87,7 +87,6 @@ export default {
         const response = await authService.register(this.form)
         this.success = response.message
 
-        // Rediriger vers home après inscription réussie
         setTimeout(() => {
           this.$router.push('/home')
         }, 1000)

@@ -1,23 +1,16 @@
 const { ObjectId } = require('mongodb');
 const bcrypt = require('bcryptjs');
 
-// ============================================
-// Fonctions Helper pour les utilisateurs
-// ============================================
 
-// Trouver un utilisateur par email
 async function findUserByEmail(db, email) {
   return await db.collection('users').findOne({ email: email.toLowerCase() });
 }
 
-// Trouver un utilisateur par ID
 async function findUserById(db, userId) {
   return await db.collection('users').findOne({ _id: new ObjectId(userId) });
 }
 
-// Créer un utilisateur (inscription classique email/password)
 async function createUser(db, { email, password, name }) {
-  // Hash du mot de passe
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -38,89 +31,39 @@ async function createUser(db, { email, password, name }) {
   };
 }
 
-// Comparer le mot de passe
 async function comparePassword(plainPassword, hashedPassword) {
   return await bcrypt.compare(plainPassword, hashedPassword);
 }
 
-// ============================================
-// Fonctions Helper pour Google OAuth
-// ============================================
 
-// Trouver un utilisateur par son Google ID
-async function findUserByGoogleId(db, googleId) {
-  return await db.collection('users').findOne({ googleId });
+
+async function findUserByProvider(db, provider, providerId) {
+  const query = {};
+  query[`${provider}Id`] = providerId;
+  return await db.collection('users').findOne(query);
 }
 
-// Créer un utilisateur depuis Google OAuth
-async function createUserFromGoogle(db, { googleId, email, name, picture }) {
-  const result = await db.collection('users').insertOne({
-    googleId,
-    email: email ? email.toLowerCase() : null,
-    name,
-    picture,
-    provider: 'google',
-    createdAt: new Date()
-    // Pas de champ password pour les utilisateurs OAuth
-  });
+async function upsertProviderUser(db, provider, profileData) {
+  const { id, email, name, picture } = profileData;
+  const providerIdField = `${provider}Id`;
 
-  return {
-    _id: result.insertedId,
-    googleId,
+  const userDoc = {
+    [providerIdField]: id,
     email: email ? email.toLowerCase() : null,
-    name,
-    picture,
-    provider: 'google',
-    createdAt: new Date()
+    name: name,
+    picture: picture,
+    provider: provider,
+    lastLogin: new Date()
   };
-}
 
-async function findUserByGithubId(db, githubId) {
-  return await db.collection('users').findOne({ githubId });
-}
-
-async function createUserFromGithub(db, { githubId, email, name, picture }) {
   const result = await db.collection('users').insertOne({
-    githubId,
-    email: email ? email.toLowerCase() : null,
-    name,
-    picture,
-    provider: 'github',
+    ...userDoc,
     createdAt: new Date()
   });
 
   return {
     _id: result.insertedId,
-    githubId,
-    email: email ? email.toLowerCase() : null,
-    name,
-    picture,
-    provider: 'github',
-    createdAt: new Date()
-  };
-}
-
-async function findUserByDiscordId(db, discordId) {
-  return await db.collection('users').findOne({ discordId });
-}
-
-async function createUserFromDiscord(db, { discordId, email, name, picture }) {
-  const result = await db.collection('users').insertOne({
-    discordId,
-    email: email ? email.toLowerCase() : null,
-    name,
-    picture,
-    provider: 'discord',
-    createdAt: new Date()
-  });
-
-  return {
-    _id: result.insertedId,
-    discordId,
-    email: email ? email.toLowerCase() : null,
-    name,
-    picture,
-    provider: 'discord',
+    ...userDoc,
     createdAt: new Date()
   };
 }
@@ -130,10 +73,6 @@ module.exports = {
   findUserById,
   createUser,
   comparePassword,
-  findUserByGoogleId,
-  createUserFromGoogle,
-  findUserByGithubId,
-  createUserFromGithub,
-  findUserByDiscordId,
-  createUserFromDiscord
+  findUserByProvider,
+  upsertProviderUser
 };

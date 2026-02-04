@@ -9,7 +9,6 @@ const authRoutes = require('./routes/auth');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuration CORS pour Vue.js
 const corsOptions = {
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true,
@@ -19,17 +18,13 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Initialiser Passport (SANS session car on utilise JWT)
 app.use(passport.initialize());
-// ⚠️ PAS de passport.session() car on est en stateless JWT !
 
-// Connexion MongoDB avec driver natif
 const client = new MongoClient(process.env.MONGODB_URI);
 
 client.connect()
   .then(() => {
     console.log('✅ MongoDB connecté');
-    // Stocker la référence db dans app.locals pour les routes
     app.locals.db = client.db();
   })
   .catch(err => {
@@ -37,10 +32,8 @@ client.connect()
     process.exit(1);
   });
 
-// Routes
 app.use('/auth', authRoutes);
 
-// Route de test
 app.get('/', (req, res) => {
   res.json({
     message: '🎓 OAuth + JWT Demo - Backend Express + MongoDB',
@@ -68,7 +61,6 @@ app.listen(PORT, () => {
   console.log(`🌐 Frontend autorisé: ${process.env.FRONTEND_URL}`);
 });
 
-// Fermer MongoDB à l'arrêt
 process.on('SIGINT', async () => {
   await client.close();
   console.log('MongoDB déconnecté');

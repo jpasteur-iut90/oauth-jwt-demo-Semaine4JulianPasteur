@@ -1,12 +1,10 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// Middleware pour vérifier le JWT
 const authenticateToken = async (req, res, next) => {
   try {
-    // Extraire le token du header Authorization
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Format: "Bearer TOKEN"
+    const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
       return res.status(401).json({
@@ -15,10 +13,8 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    // Vérifier et décoder le token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Récupérer l'utilisateur depuis MongoDB (sans le password)
     const user = await User.findById(decoded.userId).select('-password');
 
     if (!user) {
@@ -28,7 +24,6 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    // Ajouter l'utilisateur à la requête
     req.user = user;
     next();
   } catch (error) {

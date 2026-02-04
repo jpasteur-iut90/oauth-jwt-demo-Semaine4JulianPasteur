@@ -15,20 +15,16 @@ export default {
     }
   },
   mounted() {
-    // Récupérer le token depuis l'URL (passé par le backend)
     const urlParams = new URLSearchParams(window.location.search)
     const token = urlParams.get('token')
 
     if (token) {
-      // Stocker le token dans localStorage (comme pour login classique)
       localStorage.setItem('accessToken', token)
 
-      // Rediriger vers la page d'accueil
       setTimeout(() => {
         this.$router.push('/home')
       }, 500)
     } else {
-      // Pas de token = erreur
       this.error = 'Aucun token reçu. Redirection vers la page de connexion...'
       setTimeout(() => {
         this.$router.push('/login')
